@@ -21,14 +21,30 @@ ui <-
                       sidebarLayout(
                         sidebarPanel(
                           h4("Forward cue associations"),
-                          textInput("user_search", label = "Cue", value = "WORK"),
-                          h5("Enter cue above or click on target in viz to reset view.")
-                        ),
-                        mainPanel(visNetworkOutput("network"))
-                      )
-               ),
+                          textInput("user_search", label = "Cue", value = "DIRECTION"),
+                          h5("Enter cue above or click on target in viz to reset view.") )
+                        ,
+                        mainPanel(visNetworkOutput("network"))  ))
+               ,
              
-             tabPanel("about", h4("lexvarsdatr"), h4("Source"), h5("Nelson, D. L., McEvoy, C. L., & Schreiber, T. A. (2004). The University of South Florida free association, rhyme, and word fragment norms. Behavior Research Methods, Instruments, & Computers, 36(3), 402-407.") ) )
+             tabPanel("about", 
+                      sidebarLayout(
+                        sidebarPanel(
+                          h4("Source"), 
+                          helpText(a("Nelson, D. L., McEvoy, C. L., & Schreiber, T. A. (1998). The University of South Florida word association, rhyme, and word fragment norms.", href = "http://w3.usf.edu/FreeAssociation", target="_blank")),
+                          h4("Author"), 
+                          helpText(   a("Jason Timm",     href="https://www.jtimm.net", target="_blank"))),
+                          
+                        mainPanel(h4("Some network descriptives"),
+                          h6("Nelson et al. (1998) make available free-association data based on responses from more than 6,000 participants.  Over 5,000 words served as cues, eliciting over 10,000 target responses."),
+                          selectInput("type", "Centrality values:",
+                                                         c("In-degree" = "TARGET",
+                                                           "Out-degree" = "CUE")),
+                          DT::dataTableOutput("indegree"))
+                          
+                        )
+                      )
+          )
 
 
 
@@ -47,7 +63,7 @@ netx <- eventReactive(input$user_search, { #input$click,
     net$edges <- net$edges %>% select(-value)
     #net$nodes <- net$nodes %>% rename(label =id)
     
-    visNetwork(net$nodes, net$edges, main = input$user_search, sub= paste0('outdegree = ',nrow(net$nodes)-1),width = "100%", height = "800px") %>% 
+    visNetwork(net$nodes, net$edges, main = input$user_search, sub= paste0('out-degree centrality = ',nrow(net$nodes)-1),width = "100%", height = "800px") %>% 
       visNodes(scaling = list(min = 7, max = 21))%>% 
       visOptions(highlightNearest = list(enabled = T, degree = 1, hover = T)) %>%
       visGroups(groupname = "cue", color = "purple", shape = "square") %>%
@@ -61,6 +77,35 @@ netx <- eventReactive(input$user_search, { #input$click,
     #if (is.null(slt$value) || slt$col != c(1,3)) return()
     updateTextInput(session, 'user_search', value = netx()$nodes$label[slt])
   })
+    
+    
+  output$indegree <- DT::renderDataTable({
+
+    if (input$type == 'TARGET') {pos <- 'TPS'} else
+    {pos <- 'QPS'}
+    x1 <- lvdr_association %>%
+      group_by_(input$type,pos) %>%
+      summarize(count=n())%>%
+      arrange(desc(count))
+    
+    x1 %>%
+      DT::datatable(class = 'cell-border stripe', rownames = FALSE,width="100%", escape=FALSE, options = list(sDom  = '<"bottom">ip')) %>%
+      DT::formatStyle('count',
+        background = DT::styleColorBar(x1$count, 'steelblue'),
+        backgroundSize = '80% 70%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'right') %>%
+      DT::formatStyle(c(1:3),fontSize = '85%')
+    
+    })
+
+#id <- input$filter
+
+#if(id!= '') #If target clicked, subset table to target. Else, show all.
+#  DT::datatable(subset(usage,usage[input$aggs]==id),selection='none',class = 'cell-border stripe', rownames = FALSE,width="100%", escape=FALSE,options = list(sDom  = '<"bottom">ip'))
+
+    
+    
 }
 
 # Run the application 

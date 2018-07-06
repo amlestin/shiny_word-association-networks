@@ -53,13 +53,14 @@ ui <-
 server <- function(input, output, session) {
    
 netx <- eventReactive(input$user_search, { #input$click,
-  lvdr_build_network(search=toupper(input$user_search))
+  try(lvdr_build_network(search=toupper(input$user_search)))
 })
   
    output$network <- renderVisNetwork({
       
     #net <- lvdr_build_network(search=toupper(input$user_search))
     net <- netx()
+    validate(need(!is.atomic(net), "Unsupported search input"))
     
     net$edges <- net$edges %>% select(-value)
     #net$nodes <- net$nodes %>% rename(label =id)

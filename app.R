@@ -12,6 +12,7 @@ library(visNetwork)
 library(lexvarsdatr)#devtools::install_github("jaytimm/lexvarsdatr")
 library(shinythemes)
 library(tidyverse)
+library(DT)#install.packages("DT")
 
 # Define UI for application that draws a histogram
 ui <- 
